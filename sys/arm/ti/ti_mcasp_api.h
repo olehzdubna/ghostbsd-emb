@@ -75,6 +75,7 @@ __FBSDID("$FreeBSD$");
 #include <arm/ti/ti_hwmods.h>
 
 #include "ti_mcasp_hw.h"
+#include "ti_mcasp_ioctl.h"
 
 /*****************************************************************************/
 /*
@@ -492,94 +493,99 @@ typedef struct mcasp_context {
 /*
 ** Prototypes for the APIs
 */
-extern void mcasp_tx_reset(struct ti_mcasp_softc *sc);
-extern void mcasp_rx_reset(struct ti_mcasp_softc *sc);
-extern void mcasp_write_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numTxSer,
+void mcasp_tx_reset(struct ti_mcasp_softc *sc);
+void mcasp_rx_reset(struct ti_mcasp_softc *sc);
+void mcasp_write_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numTxSer,
                                  uint32_t minWdPerSer);
-extern void mcasp_read_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numRxSer,
+void mcasp_read_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numRxSer,
                                 uint32_t minWdPerSer);
-extern void mcasp_tx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask);
-extern void mcasp_rx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask);
-extern void mcasp_tx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal);
-extern void mcasp_rx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal);
-extern void mcasp_tx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
+void mcasp_tx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask);
+void mcasp_rx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask);
+void mcasp_tx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal);
+void mcasp_rx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal);
+void mcasp_tx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
                              uint32_t slotSize, uint32_t txMode);
-extern void mcasp_rx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
+void mcasp_rx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
                              uint32_t slotSize, uint32_t rxMode);
-extern void mcasp_tx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
+void mcasp_tx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
                                 uint32_t fsWidth, uint32_t fsSetting);
-extern void mcasp_rx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
+void mcasp_rx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
                                 uint32_t fsWidth, uint32_t fsSetting);
-extern void mcasp_tx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
+void mcasp_tx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
                           uint32_t mixClkDiv, uint32_t auxClkDiv);
-extern void mcasp_rx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
+void mcasp_rx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
                           uint32_t mixClkDiv, uint32_t auxClkDiv);
-extern void mcasp_tx_clk_polarity_set(struct ti_mcasp_softc *sc, uint32_t polarity);
-extern void mcasp_rx_clk_polarity_set(struct ti_mcasp_softc *sc, uint32_t polarity);
-extern void mcasp_tx_hf_clk_polarity_set(struct ti_mcasp_softc *sc,
+void mcasp_tx_clk_polarity_set(struct ti_mcasp_softc *sc, uint32_t polarity);
+void mcasp_rx_clk_polarity_set(struct ti_mcasp_softc *sc, uint32_t polarity);
+void mcasp_tx_hf_clk_polarity_set(struct ti_mcasp_softc *sc,
                                     uint32_t polarity);
-extern void mcasp_rx_hf_clk_polarity_set(struct ti_mcasp_softc *sc,
+void mcasp_rx_hf_clk_polarity_set(struct ti_mcasp_softc *sc,
                                     uint32_t polarity);
-extern void mcasp_tx_rx_clk_sync_enable(struct ti_mcasp_softc *sc);
-extern void mcasp_tx_rx_clk_sync_disable(struct ti_mcasp_softc *sc);
-extern void mcasp_serializer_tx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
-extern void mcasp_serializer_rx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
-extern void mcasp_serializer_inactivate(struct ti_mcasp_softc *sc,
+void mcasp_tx_rx_clk_sync_enable(struct ti_mcasp_softc *sc);
+void mcasp_tx_rx_clk_sync_disable(struct ti_mcasp_softc *sc);
+void mcasp_serializer_tx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
+void mcasp_serializer_rx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
+void mcasp_serializer_inactivate(struct ti_mcasp_softc *sc,
                                       uint32_t serNum);
-extern void mcasp_pin_dir_output_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
-extern void mcasp_pin_dir_input_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
-extern void mcasp_pin_mcasp_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
-extern void mcasp_pin_gpio_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
-extern void mcasp_tx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask);
-extern void mcasp_rx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask);
-extern void mcasp_tx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
-extern void mcasp_rx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
-extern void mcasp_tx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
-extern void mcasp_rx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
-extern void mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
-extern void mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
-extern void mcasp_tx_ser_activate(struct ti_mcasp_softc *sc);
-extern void mcasp_rx_ser_activate(struct ti_mcasp_softc *sc);
-extern void mcasp_tx_enable(struct ti_mcasp_softc *sc);
-extern void mcasp_rx_enable(struct ti_mcasp_softc *sc);
-extern void mcasp_a_mute_enable(struct ti_mcasp_softc *sc, uint32_t errFlags,
+void mcasp_pin_dir_output_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
+void mcasp_pin_dir_input_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
+void mcasp_pin_mcasp_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
+void mcasp_pin_gpio_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
+void mcasp_tx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask);
+void mcasp_rx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask);
+void mcasp_tx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
+void mcasp_rx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
+void mcasp_tx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
+void mcasp_rx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
+void mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
+void mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
+void mcasp_tx_ser_activate(struct ti_mcasp_softc *sc);
+void mcasp_rx_ser_activate(struct ti_mcasp_softc *sc);
+void mcasp_tx_enable(struct ti_mcasp_softc *sc);
+void mcasp_rx_enable(struct ti_mcasp_softc *sc);
+void mcasp_a_mute_enable(struct ti_mcasp_softc *sc, uint32_t errFlags,
                                uint32_t pinState);
-extern void mcasp_a_mute_disable(struct ti_mcasp_softc *sc);
-extern void mcasp_a_mute_in_activate(struct ti_mcasp_softc *sc, uint32_t polarity);
-extern void mcasp_tx_clk_check_config(struct ti_mcasp_softc *sc, uint32_t clkDiv,
+void mcasp_a_mute_disable(struct ti_mcasp_softc *sc);
+void mcasp_a_mute_in_activate(struct ti_mcasp_softc *sc, uint32_t polarity);
+void mcasp_tx_clk_check_config(struct ti_mcasp_softc *sc, uint32_t clkDiv,
                                   uint8_t boundMin, 
                                   uint8_t boundMax);
-extern void mcasp_rx_clk_check_config(struct ti_mcasp_softc *sc, uint32_t clkDiv,
+void mcasp_rx_clk_check_config(struct ti_mcasp_softc *sc, uint32_t clkDiv,
                                   uint8_t boundMin,
                                   uint8_t boundMax);
-extern void mcasp_tx_buf_write(struct ti_mcasp_softc *sc, uint32_t serNum,
-                            uint32_t data);
-extern void mcasp_dit_enable(struct ti_mcasp_softc *sc, uint32_t vBit);
-extern void mcasp_dit_disable(struct ti_mcasp_softc *sc);
-extern void mcasp_dit_chan_stat_write(struct ti_mcasp_softc *sc,
+void mcasp_tx_buf_write(struct ti_mcasp_softc *sc, uint32_t serNum,
+                     uint32_t data);
+void mcasp_dit_enable(struct ti_mcasp_softc *sc, uint32_t vBit);
+void mcasp_dit_disable(struct ti_mcasp_softc *sc);
+void mcasp_dit_chan_stat_write(struct ti_mcasp_softc *sc,
                                   uint32_t chStatBits,
                                   uint32_t channel, 
                                   uint32_t data);
-extern void mcasp_dit_chan_usr_data_write(struct ti_mcasp_softc *sc,
+void mcasp_dit_chan_usr_data_write(struct ti_mcasp_softc *sc,
                                      uint32_t chUsrDataBits,
                                      uint32_t channel, 
                                      uint32_t data);
-extern uint32_t mcasp_dit_chan_stat_read(struct ti_mcasp_softc *sc,
+uint32_t mcasp_dit_chan_stat_read(struct ti_mcasp_softc *sc,
                                          uint32_t chStatBits,
                                          uint32_t channel);
-extern uint32_t mcasp_dit_chan_usr_data_read(struct ti_mcasp_softc *sc,
+uint32_t mcasp_dit_chan_usr_data_read(struct ti_mcasp_softc *sc,
                                             uint32_t chUsrDataBits,
                                             uint32_t channel);
-extern uint32_t mcasp_rx_buf_read(struct ti_mcasp_softc *sc, uint32_t serNum);
-extern uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc);
-extern uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc);
-extern void mcasp_context_save(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
+uint32_t mcasp_rx_buf_read(struct ti_mcasp_softc *sc, uint32_t serNum);
+uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc);
+uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc);
+void mcasp_context_save(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
                              mcasp_context_t *contextPtr, uint32_t sectFlag);
-extern void mcasp_context_restore(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
+void mcasp_context_restore(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
                                 mcasp_context_t *contextPtr, uint32_t sectFlag);
 
-uint32_t ti_mcasp_read_4(struct ti_mcasp_softc *sc, bus_size_t off);
-void ti_mcasp_write_4(struct ti_mcasp_softc *sc, bus_size_t off, uint32_t val);
+uint32_t
+ti_mcasp_read_4(struct ti_mcasp_softc *sc, bus_size_t off);
+void
+ti_mcasp_write_4(struct ti_mcasp_softc *sc, bus_size_t off, uint32_t val);
+int
+mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int fflag);
+
 
 #ifdef __cplusplus
 }
