@@ -54,18 +54,20 @@ static d_write_t     mcasp_chdev_write;
 /* Character device entry points */
 static struct cdevsw mcasp_chdev_sw = {
     .d_version = D_VERSION,
-    .d_open = mcasp_chdev_open,
+    .d_open  = mcasp_chdev_open,
     .d_close = mcasp_chdev_close,
-    .d_read = mcasp_chdev_read,
+    .d_read  = mcasp_chdev_read,
     .d_write = mcasp_chdev_write,
-    .d_name = "mcasp",
+    .d_ioctl = mcasp_chdev_ioctl,
+    .d_mmap  = mcasp_chdev_mmap,
+    .d_name  = "mcasp",
 };
 
 /* vars */
 static struct cdev *mcasp_chdev;
 
 static int
-mcasp_chdev_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
+mcasp_chdev_open(struct cdev *dev, int oflags __unused, int devtype __unused,
     struct thread *td __unused)
 {
     int error = 0;
@@ -109,8 +111,6 @@ mcasp_chdev_read(struct cdev *dev __unused, struct uio *uio, int ioflag __unused
 }
 
 /*
- * echo_write takes in a character string and saves it
- * to buf for later accessing.
  */
 static int
 mcasp_chdev_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
@@ -118,6 +118,39 @@ mcasp_chdev_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unuse
     int error = 0;
 
     uprintf("Writing device \"mcasp\".\n");
+
+    return (error);
+}
+
+/*
+ */
+static int
+mcasp_chdev_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread *td)
+{
+    int error = 0;
+
+    uprintf("IOCTL call device \"mcasp\".\n");
+
+    struct ti_mcasp_softc *sc = device_get_softc((device_t)dev->si_drv1);
+
+    switch (cmd) {
+    case FBIOGTYPE:
+	break;
+    default:
+    }
+
+    return (error);
+}
+
+
+/*
+ */
+static int
+mcasp_chdev_mmap(struct cdev *cdev, vm_ooffset_t offset, vm_paddr_t *paddr, int nprot, vm_memattr_t *memattr)
+{
+    int error = 0;
+
+    uprintf("MMAP device \"mcasp\".\n");
 
     return (error);
 }

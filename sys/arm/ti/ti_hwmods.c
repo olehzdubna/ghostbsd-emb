@@ -94,6 +94,9 @@ struct hwmod ti_hwmods[] = {
 	{"uart6",	UART6_CLK},
 	{"uart7",	UART7_CLK},
 
+	{"mcasp0",	MCASP0_CLK},
+	{"mcasp1",	MCASP1_CLK},
+
 	{NULL,		0}
 };
 
@@ -124,10 +127,11 @@ ti_hwmods_get_clock(device_t dev)
 		return (INVALID_CLK_IDENT);
 
 	buf = name;
-
+// printf("+++ ti_hwmods_get_clock name: %s\n", name);
 	clk = INVALID_CLK_IDENT;
 	while ((len > 0) && (clk == INVALID_CLK_IDENT)) {
 		for (hw = ti_hwmods; hw->name != NULL; ++hw) {
+// printf("+++ ti_hwmods_get_clock name[%p]: %s\n", hw, hw->name);
 			if (strcmp(hw->name, name) == 0) {
 				clk = hw->clock_id;
 				break;

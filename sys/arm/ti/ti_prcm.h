@@ -164,6 +164,10 @@ typedef enum {
 	/* McSPI */
 	SPI0_CLK = 2000,
 	SPI1_CLK,
+
+	/* McASP */
+	MCASP0_CLK = 2100,
+	MCASP1_CLK,
 } clk_ident_t;
 
 /*
