@@ -50,6 +50,8 @@ static d_open_t      mcasp_chdev_open;
 static d_close_t     mcasp_chdev_close;
 static d_read_t      mcasp_chdev_read;
 static d_write_t     mcasp_chdev_write;
+static d_ioctl_t     mcasp_chdev_ioctl;
+static d_mmap_t      mcasp_chdev_mmap;
 
 /* Character device entry points */
 static struct cdevsw mcasp_chdev_sw = {
@@ -127,19 +129,10 @@ mcasp_chdev_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unuse
 static int
 mcasp_chdev_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread *td)
 {
-    int error = 0;
-
     uprintf("IOCTL call device \"mcasp\".\n");
 
     struct ti_mcasp_softc *sc = device_get_softc((device_t)dev->si_drv1);
-
-    switch (cmd) {
-    case FBIOGTYPE:
-	break;
-    default:
-    }
-
-    return (error);
+    return  mcasp_chdev_ioctl_calls(sc, cmd, data, fflag);
 }
 
 

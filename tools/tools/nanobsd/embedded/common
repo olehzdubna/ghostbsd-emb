@@ -181,8 +181,8 @@ NO_INSTALL_MANPAGES=t
 # WITHOUT_INFO=true			makeinfo
 # WITHOUT_RCS=true
 PKG_ONLY_MAKE_CONF="
-WITHOUT_TOOLCHAIN=true
-WITHOUT_INSTALLLIB=true
+#WITHOUT_TOOLCHAIN=true
+#WITHOUT_INSTALLLIB=true
 WITHOUT_INFO=true
 WITHOUT_RCS=true
 "
@@ -283,7 +283,7 @@ create_diskimage_mbr ( ) (
 	# boot off partition 3 or 2 by hand if you're playing around with this WIP
 	case ${NANO_LAYOUT} in
 	std-embedded)
-		mkimg -a 3 ${skiparg} ${fmtarg} ${bootmbr} -s mbr -p ${s1}:=${NANO_LOG}/_.s1 \
+		mkimg -a 1 ${skiparg} ${fmtarg} ${bootmbr} -s mbr -p ${s1}:=${NANO_LOG}/_.s1 \
 			-p ${s2}:=${NANO_LOG}/_.s2 \
 			-p ${s3}:=${NANO_LOG}/_.s3 \
 			-o ${out}
@@ -472,7 +472,7 @@ dos_boot_part ( ) (
 	cp ${NANO_WORLDDIR}/boot/ubldr.bin .
 
 	# We have to touch the saveenv file
-	touch uEnv.txt
+	echo "setenv loaderdev disk0s3a" > uEnv.txt
 
 	# Now we need to copy over dtb files from the build.
 	cp ${NANO_WORLDDIR}/boot/dtb/*.dtb .

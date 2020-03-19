@@ -131,3 +131,6 @@ device		kbdmux
 
 # Uncomment to enable evdev support for ti_adc
 # options		EVDEV_SUPPORT
+
+# McAsp
+device		ti_mcasp
