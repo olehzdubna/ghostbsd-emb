@@ -105,7 +105,7 @@ NANO_NEWFS="-b 4096 -f 512 -i 8192 -U"
 NANO_DRIVE=ada0
 
 # Target media size in 512 bytes sectors
-NANO_MEDIASIZE=2000000
+NANO_MEDIASIZE=1048576
 
 # Number of code images on media (1 or 2)
 NANO_IMAGES=2
@@ -430,7 +430,8 @@ install_kernel ( ) (
 )
 
 native_xtools ( ) (
-	print 2 "Installing the optimized native build tools for cross env"
+
+	pprint 2 "Installing the optimized native build tools for cross env"
 	pprint 3 "log: ${NANO_LOG}/_.native_xtools"
 
 	(
@@ -586,7 +587,9 @@ setup_nanobsd_etc ( ) (
 
 	echo "/dev/${NANO_DRIVE}${NANO_ROOT} / ufs ro 1 1" > etc/fstab
 	echo "/dev/${NANO_DRIVE}${NANO_SLICE_CFG} /cfg ufs rw,noauto 2 2" >> etc/fstab
+	echo "/dev/${NANO_APPL} /appl ufs rw 1 1" >> etc/fstab
 	mkdir -p cfg
+	mkdir -p appl
 
 	# Create directory for eventual /usr/local/etc contents
 	mkdir -p etc/local

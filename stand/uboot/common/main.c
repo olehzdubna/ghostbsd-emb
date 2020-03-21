@@ -218,8 +218,10 @@ get_load_device(int *type, int *unit, int *slice, int *partition)
 
 	devstr = ub_env_get("loaderdev");
 	if (devstr == NULL) {
-		printf("U-Boot env: loaderdev not set, will probe disk0s3a.\n");
-		strcpy(devstr, "disk0s3a");
+		printf("U-Boot env: loaderdev not set, will probe \"disk0s3a\".\n");
+		const char disk03a[] = "disk0s3a";
+		devstr = malloc(sizeof(disk03a));
+		strcpy(devstr, disk03a);
 //		printf("U-Boot env: loaderdev not set, will probe all devices.\n");
 //		return;
 	}
