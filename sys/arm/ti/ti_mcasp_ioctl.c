@@ -122,7 +122,7 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
           val = *(uint32_t*)data;
           mcasp_pin_dir_input_set(sc, val);
        break;
-       case MCASP_IOCTL_PIN_MCASP_IOCTL_SET:
+       case MCASP_IOCTL_PIN_MCASP_SET:
           val = *(uint32_t*)data;
           mcasp_pin_mcasp_set(sc, val);
        break;
