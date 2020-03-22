@@ -472,7 +472,7 @@ dos_boot_part ( ) (
 	cp ${NANO_WORLDDIR}/boot/ubldr.bin .
 
 	# We have to touch the saveenv file
-	echo "setenv loaderdev disk0s3a" > uEnv.txt
+	echo "env set loaderdev disk0s3a" > uEnv.txt
 
 	# Now we need to copy over dtb files from the build.
 	cp ${NANO_WORLDDIR}/boot/dtb/*.dtb .

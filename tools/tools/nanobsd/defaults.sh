@@ -587,7 +587,7 @@ setup_nanobsd_etc ( ) (
 
 	echo "/dev/${NANO_DRIVE}${NANO_ROOT} / ufs ro 1 1" > etc/fstab
 	echo "/dev/${NANO_DRIVE}${NANO_SLICE_CFG} /cfg ufs rw,noauto 2 2" >> etc/fstab
-	echo "/dev/${NANO_APPL} /appl ufs rw 1 1" >> etc/fstab
+	echo "/dev/${NANO_APPL} /appl ufs rw 0 0" >> etc/fstab
 	mkdir -p cfg
 	mkdir -p appl
 

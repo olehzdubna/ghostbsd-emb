@@ -156,23 +156,23 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
        break;
        case MCASP_IOCTL_TX_CLK_START:
           val = *(uint32_t*)data;
-          mcasp_tx_clk_start(sc, val);
+          return mcasp_tx_clk_start(sc, val) == 0;
        break;
        case MCASP_IOCTL_RX_CLK_START:
           val = *(uint32_t*)data;
-          mcasp_rx_clk_start(sc, val);
+          return mcasp_rx_clk_start(sc, val) == 0;
        break;
        case MCASP_IOCTL_TX_SER_ACTIVATE:
-          mcasp_tx_ser_activate(sc);
+          return mcasp_tx_ser_activate(sc) == 0;
        break;
        case MCASP_IOCTL_RX_SER_ACTIVATE:
-          mcasp_rx_ser_activate(sc);
+          return mcasp_rx_ser_activate(sc) == 0;
        break;
        case MCASP_IOCTL_TX_ENABLE:
-          mcasp_tx_enable(sc);
+          return mcasp_tx_enable(sc) == 0;
        break;
        case MCASP_IOCTL_RX_ENABLE:
-          mcasp_rx_enable(sc);
+          return mcasp_rx_enable(sc) == 0;
        break;
        case MCASP_IOCTL_A_MUTE_ENABLE:
           mute = (mcasp_a_mute_enable_t*)data;
