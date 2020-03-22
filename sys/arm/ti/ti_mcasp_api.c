@@ -1025,15 +1025,20 @@ void mcasp_rx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask)
  * \return  None.
  *
  **/
-void mcasp_tx_ser_activate(struct ti_mcasp_softc *sc)
+int mcasp_tx_ser_activate(struct ti_mcasp_softc *sc)
 {
+    int i=0;
+    int tries = 1000000;
+
     ti_mcasp_write_4(sc, MCASP_XSTAT, 0xFFFF);
 
     /* Release transmit serializers from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XSRCLR);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XSRCLR) 
-          != MCASP_GBLCTL_XSRCLR);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XSRCLR) 
+          != MCASP_GBLCTL_XSRCLR) && i>0; --i);
+
+   return i;
 }
 
 /**
@@ -1044,15 +1049,20 @@ void mcasp_tx_ser_activate(struct ti_mcasp_softc *sc)
  * \return  None.
  *
  **/
-void mcasp_rx_ser_activate(struct ti_mcasp_softc *sc)
+int mcasp_rx_ser_activate(struct ti_mcasp_softc *sc)
 {
+    int i=0;
+    int tries = 1000000;
+
     ti_mcasp_write_4(sc, MCASP_RSTAT, 0xFFFF);
 
     /* Release transmit serializers from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RSRCLR);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RSRCLR) 
-          != MCASP_GBLCTL_RSRCLR);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RSRCLR)
+          != MCASP_GBLCTL_RSRCLR) && i>0; --i);
+
+    return i;
 }
 
 /**
@@ -1069,22 +1079,30 @@ void mcasp_rx_ser_activate(struct ti_mcasp_softc *sc)
  * \return  None.
  *
  **/
-void mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
+int mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
 {
+    int i=0;
+    int tries = 1000000;
+    
     /* Release the high frequency clock from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XHCLKRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XHCLKRST)
-          != MCASP_GBLCTL_XHCLKRST);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XHCLKRST)
+          != MCASP_GBLCTL_XHCLKRST) && i>0; --i);
+
+    if(!i)
+      return 0;
 
     if(clkSrc != MCASP_TX_CLK_EXTERNAL)
     {
        /* Release the clock from reset*/
         val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
 	ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XCLKRST);
-	while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XCLKRST)
-            != MCASP_GBLCTL_XCLKRST);
+	for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XCLKRST)
+            != MCASP_GBLCTL_XCLKRST) && i>0; --i);
     }
+
+    return i;
 }
 
 /**
@@ -1101,22 +1119,30 @@ void mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
  * \return  None.
  *
  **/
-void mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
+int mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
 {
+    int i=0;
+    int tries = 1000000;
+    
     /* Release the high frequency clock from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RHCLKRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RHCLKRST)
-          != MCASP_GBLCTL_RHCLKRST);
-     
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RHCLKRST)
+          != MCASP_GBLCTL_RHCLKRST) && i>0; --i);
+
+    if(!i)
+      return 0;
+
     if(clkSrc != MCASP_RX_CLK_EXTERNAL)
     {
         /* Release the clock from reset*/
         val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
 	ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RCLKRST);
-	while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RCLKRST)
-            != MCASP_GBLCTL_RCLKRST);
+	for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RCLKRST)
+            != MCASP_GBLCTL_RCLKRST) && i>0; --i);
     }
+
+    return i;
 }
 
 /**
@@ -1130,19 +1156,27 @@ void mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc)
  * \return  None.
  *
  **/
-void mcasp_tx_enable(struct ti_mcasp_softc *sc)
+int mcasp_tx_enable(struct ti_mcasp_softc *sc)
 {
+    int i=0;
+    int tries = 1000000;
+
     /* Release the Transmit State machine from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XSMRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XSMRST)
-          != MCASP_GBLCTL_XSMRST);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XSMRST)
+          != MCASP_GBLCTL_XSMRST) && i>0; --i);
+
+    if(!i)
+      return 0;
 
     /* Release the frame sync generator from reset*/
     val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XFRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XFRST)
-          != MCASP_GBLCTL_XFRST);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XFRST)
+          != MCASP_GBLCTL_XFRST) && i>0; --i);
+
+    return i;
 }
 
 /**
@@ -1156,19 +1190,27 @@ void mcasp_tx_enable(struct ti_mcasp_softc *sc)
  * \return  None.
  *
  **/
-void mcasp_rx_enable(struct ti_mcasp_softc *sc)
+int mcasp_rx_enable(struct ti_mcasp_softc *sc)
 {
+    int i=0;
+    int tries = 1000000;
+
     /* Release the Receive State machine from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RSMRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RSMRST)
-          != MCASP_GBLCTL_RSMRST);
-     
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RSMRST)
+          != MCASP_GBLCTL_RSMRST) && i>0; --i);
+
+    if(!i)
+      return 0;
+
     /* Release the frame sync generator from reset*/
     val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RFRST);
-    while((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RFRST)
-          != MCASP_GBLCTL_RFRST);
+    for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RFRST)
+          != MCASP_GBLCTL_RFRST) && i>0; --i);
+
+    return i;
 }
 
 /**

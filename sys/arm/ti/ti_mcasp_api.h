@@ -537,12 +537,12 @@ void mcasp_tx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
 void mcasp_rx_int_disable(struct ti_mcasp_softc *sc, uint32_t intMask);
 void mcasp_tx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
 void mcasp_rx_int_enable(struct ti_mcasp_softc *sc, uint32_t intMask);
-void mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
-void mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
-void mcasp_tx_ser_activate(struct ti_mcasp_softc *sc);
-void mcasp_rx_ser_activate(struct ti_mcasp_softc *sc);
-void mcasp_tx_enable(struct ti_mcasp_softc *sc);
-void mcasp_rx_enable(struct ti_mcasp_softc *sc);
+int mcasp_tx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
+int mcasp_rx_clk_start(struct ti_mcasp_softc *sc, uint32_t clkSrc);
+int mcasp_tx_ser_activate(struct ti_mcasp_softc *sc);
+int mcasp_rx_ser_activate(struct ti_mcasp_softc *sc);
+int mcasp_tx_enable(struct ti_mcasp_softc *sc);
+int mcasp_rx_enable(struct ti_mcasp_softc *sc);
 void mcasp_a_mute_enable(struct ti_mcasp_softc *sc, uint32_t errFlags,
                                uint32_t pinState);
 void mcasp_a_mute_disable(struct ti_mcasp_softc *sc);
