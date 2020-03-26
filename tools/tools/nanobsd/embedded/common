@@ -263,7 +263,12 @@ create_diskimage_mbr ( ) (
 	if [ -z "${NANO_CFGDIR}" ]; then
 		echo "Faking cfg dir, it's empty"
 		NANO_CFGDIR=${NANO_LOG}/_.empty
-		mkdir -p ${NANO_CFGDIR}
+		mkdir -p ${NANO_CFGDIR} 
+		if [ ${NANO_CONFIG} = "beaglebone.cfg" ] ; then
+                      pprint 2 "Custom post-build set up for Beaglebone"
+                      . ${topdir}/embedded/beaglebone.sh
+                      cust_rc_services
+                fi
 	fi
 	# XXX -F cfg-mtree
 	eval "${NANO_MAKEFS_UFS}" -s ${NANO_SLICE_CFG_SIZE} \
