@@ -25,6 +25,7 @@ name="DHCP Client Daemon"
 depend()
 {
 	keyword -stop -shutdown
+        need network
 }
 
 uniqify()
