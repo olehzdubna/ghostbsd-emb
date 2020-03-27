@@ -7,6 +7,6 @@ cust_rc_services () {
   cd ${NANO_CFGDIR}/runlevels/default > ${NANO_LOG}/nano_rc_services.log 2>&1
   for service in ${services}
   do
-      ln -sv /etc/init.d/${service} ${service} > ${NANO_LOG}/nano_rc_services.log 2>&1
+      ln -sv /etc/init.d/${service} ${service} >> ${NANO_LOG}/nano_rc_services.log 2>&1
   done
 }
