@@ -525,6 +525,7 @@ void mcasp_tx_rx_clk_sync_enable(struct ti_mcasp_softc *sc);
 void mcasp_tx_rx_clk_sync_disable(struct ti_mcasp_softc *sc);
 void mcasp_serializer_tx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
 void mcasp_serializer_rx_set(struct ti_mcasp_softc *sc, uint32_t serNum);
+uint32_t mcasp_serializer_get(struct ti_mcasp_softc *sc, uint32_t serNum);
 void mcasp_serializer_inactivate(struct ti_mcasp_softc *sc,
                                       uint32_t serNum);
 void mcasp_pin_dir_output_set(struct ti_mcasp_softc *sc, uint32_t pinMask);
@@ -574,6 +575,8 @@ uint32_t mcasp_dit_chan_usr_data_read(struct ti_mcasp_softc *sc,
 uint32_t mcasp_rx_buf_read(struct ti_mcasp_softc *sc, uint32_t serNum);
 uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc);
 uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc);
+void mcasp_tx_status_set(struct ti_mcasp_softc *sc, uint32_t status);
+void mcasp_rx_status_set(struct ti_mcasp_softc *sc, uint32_t status);
 void mcasp_context_save(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
                              mcasp_context_t *contextPtr, uint32_t sectFlag);
 void mcasp_context_restore(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
