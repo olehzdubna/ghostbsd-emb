@@ -457,6 +457,8 @@ void mcasp_tx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
     val = ti_mcasp_read_4(sc, MCASP_AHCLKXCTL);
     ti_mcasp_write_4(sc, MCASP_AHCLKXCTL, val | ((clkSrc & MCASP_AHCLKXCTL_HCLKXM)
                                           | auxClkDiv) );
+
+    printf("+++ mcasp_tx_clk_cfg Clk: %8.8x HClk: %8.8x\n",  ti_mcasp_read_4(sc, MCASP_ACLKXCTL), ti_mcasp_read_4(sc, MCASP_AHCLKXCTL));
 }
 
 /**
@@ -498,6 +500,7 @@ void mcasp_rx_clk_cfg(struct ti_mcasp_softc *sc, uint32_t clkSrc,
     val = ti_mcasp_read_4(sc, MCASP_AHCLKRCTL);
     ti_mcasp_write_4(sc, MCASP_AHCLKRCTL, val | ((clkSrc & MCASP_AHCLKRCTL_HCLKRM)
                                           | auxClkDiv) );
+    printf("+++ mcasp_rx_clk_cfg Clk: %8.8x HClk: %8.8x\n",  ti_mcasp_read_4(sc, MCASP_ACLKRCTL), ti_mcasp_read_4(sc, MCASP_AHCLKRCTL));
 }
 
 /**
@@ -634,7 +637,7 @@ void mcasp_serializer_tx_set(struct ti_mcasp_softc *sc, uint32_t serNum)
     uint32_t val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val & ~MCASP_SRCTL0_SRMOD);
     val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
-    ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | MCASP_SRCTL_SRMOD_TX);
+    ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | 0xC | MCASP_SRCTL_SRMOD_TX);
 }
 
 /**
@@ -652,6 +655,21 @@ void mcasp_serializer_rx_set(struct ti_mcasp_softc *sc, uint32_t serNum)
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val & ~MCASP_SRCTL0_SRMOD);
     val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | MCASP_SRCTL_SRMOD_RX);
+}
+
+
+/**
+ * \brief   Gets a serializer status
+ *
+ * \param   baseAddr      Base Address of the McASP Module Registers.
+ * \param   serNum        Serializer which is to be used.
+ *
+ * \return  register value.
+ *
+ **/
+uint32_t mcasp_serializer_get(struct ti_mcasp_softc *sc, uint32_t serNum)
+{
+    return ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
 }
 
 /**
@@ -1488,6 +1506,52 @@ uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc)
 uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc)
 {
     return ti_mcasp_read_4(sc, MCASP_RSTAT);
+}
+
+/**
+ * \brief   Sets the status of McASP transmission.
+ *
+ * \param   baseAddr      Base Address of the McASP Module Registers.
+ *
+ *          The below tokens can be used for each status bits set. \n
+ *              MCASP_TX_STAT_ERR  \n
+ *              MCASP_TX_STAT_DMAERR \n
+ *              MCASP_TX_STAT_STARTOFFRAME \n
+ *              MCASP_TX_STAT_DATAREADY \n
+ *              MCASP_TX_STAT_LASTSLOT \n
+ *              MCASP_TX_STAT_CURRSLOT_EVEN \n
+ *              MCASP_TX_STAT_CURRSLOT_ODD \n
+ *              MCASP_TX_STAT_CLKFAIL \n
+ *              MCASP_TX_STAT_SYNCERR \n
+ *              MCASP_TX_STAT_UNDERRUN
+ *
+ **/
+void mcasp_tx_status_set(struct ti_mcasp_softc *sc, uint32_t status)
+{
+    return ti_mcasp_write_4(sc, MCASP_XSTAT, status);
+}
+
+/**
+ * \brief   Sets the status of McASP reception
+ *
+ * \param   baseAddr      Base Address of the McASP Module Registers.
+ *
+ *          The below tokens can be used for each status bits set. \n
+ *              MCASP_RX_STAT_ERR  \n
+ *              MCASP_RX_STAT_DMAERR \n
+ *              MCASP_RX_STAT_STARTOFFRAME \n
+ *              MCASP_RX_STAT_DATAREADY \n
+ *              MCASP_RX_STAT_LASTSLOT \n
+ *              MCASP_RX_STAT_CURRSLOT_EVEN \n
+ *              MCASP_RX_STAT_CURRSLOT_ODD \n
+ *              MCASP_RX_STAT_CLKFAIL \n
+ *              MCASP_RX_STAT_SYNCERR \n
+ *              MCASP_RX_STAT_OVERRUN \n
+ *
+ **/
+void mcasp_rx_status_set(struct ti_mcasp_softc *sc, uint32_t status)
+{
+    return ti_mcasp_write_4(sc, MCASP_RSTAT, status);
 }
 
 /**

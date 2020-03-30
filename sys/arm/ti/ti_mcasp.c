@@ -129,8 +129,6 @@ mcasp_chdev_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unuse
 static int
 mcasp_chdev_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread *td)
 {
-    uprintf("IOCTL call device \"mcasp\".\n");
-
     struct ti_mcasp_softc *sc = device_get_softc((device_t)dev->si_drv1);
     return  mcasp_chdev_ioctl_calls(sc, cmd, data, fflag);
 }
@@ -151,7 +149,9 @@ mcasp_chdev_mmap(struct cdev *cdev, vm_ooffset_t offset, vm_paddr_t *paddr, int 
 static void
 ti_mcasp_intr(void *arg)
 {
-//	struct ti_mcasp_softc *sc = arg;
+  struct ti_mcasp_softc *sc = arg;
+
+  uprintf("McASP interrupt, TX: %8.8x, RX: %8.8x \n", mcasp_tx_status_get(sc), mcasp_rx_status_get(sc));
 
 //	_mcaspgeneric_intr(&sc->slot);
 }
