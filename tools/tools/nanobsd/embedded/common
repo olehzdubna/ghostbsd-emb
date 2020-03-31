@@ -267,7 +267,7 @@ create_diskimage_mbr ( ) (
 		if [ ${NANO_CONFIG} = "beaglebone.cfg" ] ; then
                       pprint 2 "Custom post-build set up for Beaglebone"
                       . ${topdir}/embedded/beaglebone.sh
-                      cust_rc_services
+                      cust_enable_rc_services
                 fi
 	fi
 	# XXX -F cfg-mtree
@@ -408,6 +408,8 @@ typical_embedded ( ) (
 	echo "ntpdate_enable=YES" >> $rc
 	echo "ifconfig_DEFAULT=DHCP" >> $rc
 	echo "ntpdate_hosts='0.freebsd.pool.ntp.org 1.freebsd.pool.ntp.org'" >> $rc
+	echo "ntpdate_startup_delay=60" >> $rc
+	echo "ownership_directories='/var/empty'" >> $rc
 	# Make sure that firstboot scripts run so growfs works.
 	# Note: still some issues remvoing this XXX
 	touch ${NANO_WORLDDIR}/firstboot
