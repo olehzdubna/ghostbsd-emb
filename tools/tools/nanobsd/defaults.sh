@@ -406,6 +406,13 @@ install_etc ( ) (
 	# so they can spam it.
 	cp /dev/null "${NANO_WORLDDIR}"/etc/make.conf
 	) > ${NANO_LOG}/_.etc 2>&1
+
+	if [ ${NANO_CONFIG} = "beaglebone.cfg" ] ; then
+            pprint 2 "Additional custom services for Beaglebone"
+            . ${topdir}/embedded/beaglebone.sh
+            cust_add_rc_services
+        fi
+
 )
 
 install_kernel ( ) (
