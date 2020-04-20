@@ -30,11 +30,44 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "ti_mcasp_api.h"
-
 #include <sys/types.h>
 #include <sys/conf.h> /* cdevsw struct */
 #include <sys/uio.h>  /* uio struct */
+
+#include "ti_mcasp_api.h"
+#include "ti_mcasp_dma.h"
+
+/**
+ *	Locking macros used throughout the driver
+ */
+#define	MCASP_LOCK(_sc)		mtx_lock(&(_sc)->sc_mtx)
+#define	MCASP_UNLOCK(_sc)	mtx_unlock(&(_sc)->sc_mtx)
+#define	MCASP_LOCK_INIT(_sc)						\
+	mtx_init(&_sc->sc_mtx, device_get_nameunit(_sc->dev),	\
+	    "mcasp", MTX_DEF)
+
+static struct resource_spec ti_mcasp_mem_spec[] = {
+	{ SYS_RES_MEMORY,   0,  RF_ACTIVE },
+	{ SYS_RES_MEMORY,   1,  RF_ACTIVE },
+	{ -1,               0,  0 }
+};
+
+static struct resource_spec ti_mcasp_irq_spec[] = {
+	{ SYS_RES_IRQ,   0,  RF_ACTIVE },
+	{ SYS_RES_IRQ,   1,  RF_ACTIVE },
+	{ -1,               0,  0 }
+};
+
+static void ti_mcasp_intr_tx(void *arg);
+static void ti_mcasp_intr_rx(void *arg);
+static struct {
+	driver_intr_t *handler;
+	char * description;
+} ti_mcasp_intrs[TI_MCASP_NUM_IRQS] = {
+	{ ti_mcasp_intr_tx,	"McASP TX Interrupt" },
+	{ ti_mcasp_intr_rx,	"McASP RX Interrupt" },
+};
+
 
 /*
  * Table of supported FDT compat strings.
@@ -69,21 +102,30 @@ static struct cdevsw mcasp_chdev_sw = {
 static struct cdev *mcasp_chdev;
 
 static int
-mcasp_chdev_open(struct cdev *dev, int oflags __unused, int devtype __unused,
+mcasp_chdev_open(struct cdev* cdev, int oflags __unused, int devtype __unused,
     struct thread *td __unused)
 {
     int error = 0;
+    struct ti_mcasp_softc *sc = device_get_softc((device_t)cdev->si_drv1);
 
-    struct ti_mcasp_softc *sc = device_get_softc((device_t)dev->si_drv1);
-    printf("+++ mcasp_chdev_open sc_bsh:uint32_t val[0]: %8.8x \n", ti_mcasp_read_4(sc, 0));
-
+    printf("+++ mcasp_chdev_open reg[0]: %8.8x \n", ti_mcasp_read_4(sc, 0));
+/*
     printf("+++ mcasp_chdev_open mcasp_tx_reset \n");
     mcasp_tx_reset(sc);
 
     printf("+++ mcasp_chdev_open mcasp_rx_reset \n");
     mcasp_rx_reset(sc);
 
+    uprintf("+++ Initiliazing DMA...\n");
+	init_mcasp_dma(sc);
+    uprintf("+++ Initiliazing DMA...done\n");
+*/
     uprintf("Opened device \"mcasp\" successfully.\n");
+
+    uprintf("Opened device \"mcasp\" test...\n");
+
+    mcasp_start_test(sc);
+
     return (error);
 }
 
@@ -94,6 +136,9 @@ mcasp_chdev_close(struct cdev *dev __unused, int fflag __unused, int devtype __u
     int error = 0;
 
     uprintf("Closing device \"mcasp\".\n");
+
+    release_mcasp_dma();
+
     return (error);
 }
 
@@ -103,23 +148,41 @@ mcasp_chdev_close(struct cdev *dev __unused, int fflag __unused, int devtype __u
  * uio(9)
  */
 static int
-mcasp_chdev_read(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
+mcasp_chdev_read(struct cdev* cdev, struct uio* uio, int ioflag __unused)
 {
-    int error = 0;
+  int error = 0;
+  struct ti_mcasp_softc *sc = device_get_softc((device_t)cdev->si_drv1);
 
-    uprintf("Reading device \"mcasp\".\n");
+  uprintf("Reading device \"mcasp\".\n");
+  mtx_lock(&sc->sc_mtx_rx);
 
-    return (error);
+  mtx_sleep(&sc->rx_chan, &sc->sc_mtx_rx, 0, "mcaspr", 0);
+
+  int amount = mcasp_dma_get_size();
+  uint32_t* mem = mcasp_dma_get_rx_mem();
+
+  error = uiomove(mem, amount, uio);
+  if (error != 0)
+    uprintf("Read failed.\n");
+
+  wakeup(&sc->rx_chan);
+
+  mtx_unlock(&sc->sc_mtx_rx);
+
+  return (error);
 }
 
 /*
  */
 static int
-mcasp_chdev_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
+mcasp_chdev_write(struct cdev* cdev, struct uio *uio, int ioflag __unused)
 {
     int error = 0;
+    struct ti_mcasp_softc *sc = device_get_softc((device_t)cdev->si_drv1);
 
     uprintf("Writing device \"mcasp\".\n");
+
+    mtx_sleep(&sc->tx_chan, &sc->sc_mtx_tx, 0, "mcaspt", 0);
 
     return (error);
 }
@@ -143,17 +206,87 @@ mcasp_chdev_mmap(struct cdev *cdev, vm_ooffset_t offset, vm_paddr_t *paddr, int 
 
     uprintf("MMAP device \"mcasp\".\n");
 
+//    struct ti_mcasp_softc *sc = device_get_softc((device_t)cdev->si_drv1);
+//
+//    if (offset >= rman_get_size(sc->sc_mem_res))
+//		return (ENOSPC);
+//
+//    *paddr = rman_get_start(sc->sc_mem_res) + offset;
+//    *memattr = VM_MEMATTR_UNCACHEABLE;
+
     return (error);
 }
 
 static void
-ti_mcasp_intr(void *arg)
+ti_mcasp_intr_tx(void *arg)
 {
   struct ti_mcasp_softc *sc = arg;
+  uint32_t handled = 0;
 
-  uprintf("McASP interrupt, TX: %8.8x, RX: %8.8x \n", mcasp_tx_status_get(sc), mcasp_rx_status_get(sc));
+  MCASP_LOCK(sc);
 
-//	_mcaspgeneric_intr(&sc->slot);
+  uint32_t status = mcasp_tx_status_get(sc);
+
+  if(status & MCASP_TX_STAT_DMAERR) {
+	  handled |= MCASP_TX_STAT_DMAERR;
+  }
+  if(status & MCASP_TX_STAT_STARTOFFRAME) {
+  }
+  if(status & MCASP_TX_STAT_DATAREADY) {
+  }
+  if(status & MCASP_TX_STAT_LASTSLOT) {
+  }
+  if(status & MCASP_TX_STAT_CLKFAIL) {
+	  handled |= MCASP_TX_STAT_CLKFAIL;
+  }
+  if(status & MCASP_TX_STAT_SYNCERR) {
+	  handled |= MCASP_RX_STAT_SYNCERR;
+  }
+  if(status & MCASP_TX_STAT_UNDERRUN) {
+	  handled |= MCASP_TX_STAT_UNDERRUN;
+  }
+
+  mcasp_tx_status_set(sc, handled);
+
+  MCASP_UNLOCK(sc);
+
+  printf("McASP interrupt, TX: handled: %8.8x, status: %8.8x\n", handled, status);
+}
+
+static void
+ti_mcasp_intr_rx(void *arg)
+{
+  struct ti_mcasp_softc *sc = arg;
+  uint32_t handled = 0;
+
+  MCASP_LOCK(sc);
+
+  uint32_t status = mcasp_rx_status_get(sc);
+
+  if(status & MCASP_RX_STAT_DMAERR) {
+ 	  handled |= MCASP_RX_STAT_DMAERR;
+  }
+  if(status & MCASP_RX_STAT_STARTOFFRAME) {
+  }
+  if(status & MCASP_RX_STAT_DATAREADY) {
+  }
+  if(status & MCASP_RX_STAT_LASTSLOT) {
+  }
+  if(status & MCASP_RX_STAT_CLKFAIL) {
+ 	  handled |= MCASP_RX_STAT_CLKFAIL;
+  }
+  if(status & MCASP_RX_STAT_SYNCERR) {
+ 	  handled |= MCASP_RX_STAT_SYNCERR;
+  }
+  if(status & MCASP_RX_STAT_OVERRUN) {
+ 	  handled |= MCASP_RX_STAT_OVERRUN;
+  }
+
+  mcasp_rx_status_set(sc, handled);
+
+  MCASP_UNLOCK(sc);
+
+  printf("McASP interrupt, RX: handled: %8.8x, status: %8.8x\n", handled, status);
 }
 
 static int
@@ -202,12 +335,11 @@ ti_mcasp_hw_init(device_t dev)
 static int
 ti_mcasp_attach(device_t dev)
 {
-	struct ti_mcasp_softc *sc = device_get_softc(dev);
-	int rid;
+	int i;
 	int err;
-//	pcell_t prop;
 	phandle_t node;
 
+	struct ti_mcasp_softc *sc = device_get_softc(dev);
 	sc->dev = dev;
 
 	/*
@@ -239,36 +371,41 @@ ti_mcasp_attach(device_t dev)
 		panic("Unknown OMAP device\n");
 	}
 
-	/* Resource setup. */
-	rid = 0;
-	sc->mem_res = bus_alloc_resource_any(dev, SYS_RES_MEMORY, &rid,
-	    RF_ACTIVE);
-	if (!sc->mem_res) {
-		device_printf(dev, "cannot allocate memory window\n");
+	/* Request the memory resources */
+	err = bus_alloc_resources(dev, ti_mcasp_mem_spec, sc->mem_res);
+	if (err) {
+		device_printf(dev, "Error: could not allocate memory resources\n");
 		err = ENXIO;
 		goto fail;
 	}
 
-	printf("+++ ti_mcasp_attach mcasp mem_res: %p \n", sc->mem_res);
+	printf("+++ ti_mcasp_attach mcasp mem_res[0]: %p, mem_res[1]: %p\n", sc->mem_res[0], sc->mem_res[1]);
 
-	rid = 0;
-	sc->irq_res = bus_alloc_resource_any(dev, SYS_RES_IRQ, &rid,
-	    RF_ACTIVE);
-	if (!sc->irq_res) {
-		device_printf(dev, "cannot allocate interrupt\n");
+	err = bus_alloc_resources(dev, ti_mcasp_irq_spec, sc->irq_res);
+	if (err) {
+		device_printf(dev, "Error: could not allocate irq resources\n");
 		err = ENXIO;
 		goto fail;
 	}
 
-	printf("+++ ti_mcasp_attach mcasp irq_res: %p \n", sc->irq_res);
+	printf("+++ ti_mcasp_attach mcasp irq_res[0]: %p, irq_res[1]: %p\n", sc->irq_res[0], sc->irq_res[1]);
 
-	if (bus_setup_intr(dev, sc->irq_res, INTR_TYPE_BIO | INTR_MPSAFE,
-	    NULL, ti_mcasp_intr, sc, &sc->intr_cookie)) {
-		device_printf(dev, "cannot setup interrupt handler\n");
-		err = ENXIO;
-		goto fail;
+	/* Attach interrupt handlers */
+	for (i = 0; i < TI_MCASP_NUM_IRQS; ++i) {
+		err = bus_setup_intr(dev, sc->irq_res[i], INTR_TYPE_MISC |
+		    INTR_MPSAFE, NULL, *ti_mcasp_intrs[i].handler,
+		    sc, &sc->intr_cookie[i]);
+		if (err) {
+			device_printf(dev, "could not setup %s\n",
+			    ti_mcasp_intrs[i].description);
+			return (err);
+		}
 	}
 
+    MCASP_LOCK_INIT(sc);
+
+	mtx_init(&sc->sc_mtx_rx, "mcasp_rx", NULL, MTX_DEF);
+	mtx_init(&sc->sc_mtx_tx, "mcasp_tx", NULL, MTX_DEF);
 
 	/* Initialise the McAsp hardware. */
 	ti_mcasp_hw_init(dev);
@@ -293,13 +430,16 @@ ti_mcasp_attach(device_t dev)
 	return (0);
 
 fail:
-	if (sc->intr_cookie)
-		bus_teardown_intr(dev, sc->irq_res, sc->intr_cookie);
-	if (sc->irq_res)
-		bus_release_resource(dev, SYS_RES_IRQ, 0, sc->irq_res);
-	if (sc->mem_res)
-		bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->mem_res);
-
+	for (i = 0; i < TI_MCASP_NUM_IRQS; ++i) {
+	    if (sc->intr_cookie[i])
+		bus_teardown_intr(dev, sc->irq_res[i], sc->intr_cookie[i]);
+	    if (sc->irq_res[i])
+		bus_release_resource(dev, SYS_RES_IRQ, 0, sc->irq_res[i]);
+	}
+	for (i = 0; i < TI_MCASP_NUM_MEMS; ++i) {
+	    if (sc->mem_res[i])
+		bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->mem_res[i]);
+	}
 	return (err);
 }
 

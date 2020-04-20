@@ -70,12 +70,15 @@ struct ti_edma3cc_param_set {
 	uint16_t reserved;		/* Reserved */
 };
 
+typedef void edma3_compl_hdlr_t(uint32_t);
+
 void ti_edma3_init(unsigned int eqn);
 int ti_edma3_request_dma_ch(unsigned int ch, unsigned int tccn, unsigned int eqn);
 int ti_edma3_request_qdma_ch(unsigned int ch, unsigned int tccn, unsigned int eqn);
 int ti_edma3_enable_transfer_manual(unsigned int ch);
 int ti_edma3_enable_transfer_qdma(unsigned int ch);
 int ti_edma3_enable_transfer_event(unsigned int ch);
+int ti_edma3_enable_event_intr(unsigned int ch, edma3_compl_hdlr_t* hdlr);
 
 void ti_edma3_param_write(unsigned int ch, struct ti_edma3cc_param_set *prs);
 void ti_edma3_param_read(unsigned int ch, struct ti_edma3cc_param_set *prs);

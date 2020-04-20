@@ -10,6 +10,10 @@ __FBSDID("$FreeBSD$");
 #include "ti_mcasp_api.h"
 #include "ti_mcasp_ioctl.h"
 
+#include "ti_mcasp_dma.h"
+#include "ti_edma3.h"
+#include "ti_edma3_event.h"
+
 
 int
 mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int fflag)
@@ -169,9 +173,11 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
          return (mcasp_rx_clk_start(sc, val) == 0 ? EBUSY : 0);
          break;
        case MCASP_IOCTL_TX_SER_ACTIVATE:
-         return (mcasp_tx_ser_activate(sc) == 0 ? EBUSY : 0);
+    	   ti_edma3_enable_transfer_event(EDMA3_CHA_MCASP0_TX);
+    	   return (mcasp_tx_ser_activate(sc) == 0 ? EBUSY : 0);
          break;
        case MCASP_IOCTL_RX_SER_ACTIVATE:
+    	 ti_edma3_enable_transfer_event(EDMA3_CHA_MCASP0_RX);
          return (mcasp_rx_ser_activate(sc) == 0 ? EBUSY : 0);
          break;
        case MCASP_IOCTL_TX_ENABLE:
@@ -241,6 +247,9 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
          val = *(uint32_t*)data;
          mcasp_tx_status_set(sc, val);
          break;
+       case MCASP_IOCTL_GLOBAL_STATUS_GET:
+         *(uint32_t*)data = mcasp_global_status_get(sc);
+         break;
        case MCASP_IOCTL_RX_STATUS_SET:
          val = *(uint32_t*)data;
          mcasp_rx_status_set(sc, val);
@@ -250,6 +259,19 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
          break;
        case MCASP_IOCTL_CONTEXT_RESTORECTRL:
    	     return EINVAL;
+         break;
+       case MCASP_IOCTL_ENABLE_TRANSFERS:
+         mcasp_enable_transfers(sc);
+         break;
+       case MCASP_IOCTL_RUN_TEST:
+           return mcasp_run_test();
+         break;
+       case MCASP_IOCTL_DOUT_SET:
+           val = *(uint32_t*)data;
+           mcasp_dout_set(sc, val);
+         break;
+       case MCASP_IOCTL_DIN_GET:
+           *(uint32_t*)data = mcasp_din_get(sc);
          break;
     }
     return 0;

@@ -50,7 +50,11 @@ typedef struct {
 #define MCASP_IOCTL_TX_RX_CLK_SYNC_DISABLE  _IO(MCASP_IOCTL_MAGIC, 20)
 #define MCASP_IOCTL_SERIALIZER_TX_SET       _IOW(MCASP_IOCTL_MAGIC, 21, uint32_t)
 #define MCASP_IOCTL_SERIALIZER_RX_SET       _IOW(MCASP_IOCTL_MAGIC, 22, uint32_t)
-#define MCASP_IOCTL_SERIALIZER_GET          _IOR(MCASP_IOCTL_MAGIC, 23, mcasp_buf_t)
+typedef struct {
+    uint32_t serNum;
+    uint32_t data;
+} mcasp_buf_t;
+#define MCASP_IOCTL_SERIALIZER_GET          _IOWR(MCASP_IOCTL_MAGIC, 23, mcasp_buf_t)
 #define MCASP_IOCTL_SERIALIZER_INACTIVATE   _IOW(MCASP_IOCTL_MAGIC, 24, uint32_t)
 #define MCASP_IOCTL_PIN_DIR_OUTPUT_SET      _IOW(MCASP_IOCTL_MAGIC, 25, uint32_t)
 #define MCASP_IOCTL_PIN_DIR_INPUT_SET       _IOW(MCASP_IOCTL_MAGIC, 26, uint32_t)
@@ -82,10 +86,6 @@ typedef struct {
 } mcasp_clk_check_t;
 #define MCASP_IOCTL_TX_CLK_CHECK_CONFIG     _IOW(MCASP_IOCTL_MAGIC, 44, mcasp_clk_check_t)
 #define MCASP_IOCTL_RX_CLK_CHECK_CONFIG     _IOW(MCASP_IOCTL_MAGIC, 45, mcasp_clk_check_t)
-typedef struct {
-    uint32_t serNum;
-    uint32_t data;
-} mcasp_buf_t;
 #define MCASP_IOCTL_TX_BUF_WRITE            _IOW(MCASP_IOCTL_MAGIC, 46, mcasp_buf_t)
 #define MCASP_IOCTL_DIT_ENABLE              _IO(MCASP_IOCTL_MAGIC, 47)
 #define MCASP_IOCTL_DIT_DISABLE             _IO(MCASP_IOCTL_MAGIC, 48)
@@ -93,13 +93,20 @@ typedef struct {
 #define MCASP_IOCTL_DIT_CHAN_USR_DATA_WRITE _IO(MCASP_IOCTL_MAGIC, 50)
 #define MCASP_IOCTL_DIT_CHAN_STAT_READ      _IO(MCASP_IOCTL_MAGIC, 51)
 #define MCASP_IOCTL_DIT_CHAN_USR_DATA_READ  _IO(MCASP_IOCTL_MAGIC, 52)
-#define MCASP_IOCTL_RX_BUF_READ             _IOR(MCASP_IOCTL_MAGIC, 53, mcasp_buf_t)
+#define MCASP_IOCTL_RX_BUF_READ             _IOWR(MCASP_IOCTL_MAGIC, 53, mcasp_buf_t)
 #define MCASP_IOCTL_TX_STATUS_GET           _IOR(MCASP_IOCTL_MAGIC, 54, uint32_t)
 #define MCASP_IOCTL_RX_STATUS_GET           _IOR(MCASP_IOCTL_MAGIC, 55, uint32_t)
 #define MCASP_IOCTL_TX_STATUS_SET           _IOW(MCASP_IOCTL_MAGIC, 56, uint32_t)
 #define MCASP_IOCTL_RX_STATUS_SET           _IOW(MCASP_IOCTL_MAGIC, 57, uint32_t)
 #define MCASP_IOCTL_CONTEXT_SAVECTRL        _IO(MCASP_IOCTL_MAGIC, 58)
 #define MCASP_IOCTL_CONTEXT_RESTORECTRL     _IO(MCASP_IOCTL_MAGIC, 59)
+#define MCASP_IOCTL_GLOBAL_STATUS_GET       _IOR(MCASP_IOCTL_MAGIC, 60, uint32_t)
+
+#define MCASP_IOCTL_ENABLE_TRANSFERS        _IO(MCASP_IOCTL_MAGIC, 61)
+#define MCASP_IOCTL_RUN_TEST                _IO(MCASP_IOCTL_MAGIC, 62)
+#define MCASP_IOCTL_DOUT_SET                _IOW(MCASP_IOCTL_MAGIC, 64, uint32_t)
+#define MCASP_IOCTL_DIN_GET                 _IOR(MCASP_IOCTL_MAGIC, 65, uint32_t)
+
 
 #ifdef __cplusplus
 }

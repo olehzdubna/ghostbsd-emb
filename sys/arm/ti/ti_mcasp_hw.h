@@ -59,10 +59,10 @@ extern "C" {
 
 #if defined(am335x) || defined(am335x_13x13) || defined(am335x_15x15) || \
     defined(c6a811x) || defined(am386x) || defined(c6741x)
-#define MCASP_FIFO_WFIFOCTL             (0x00)
-#define MCASP_FIFO_WFIFOSTS             (0x04)
-#define MCASP_FIFO_RFIFOCTL             (0x08)
-#define MCASP_FIFO_RFIFOSTS             (0x0C)
+#define MCASP_FIFO_WFIFOCTL             (0x1000)
+#define MCASP_FIFO_WFIFOSTS             (0x1004)
+#define MCASP_FIFO_RFIFOCTL             (0x1008)
+#define MCASP_FIFO_RFIFOSTS             (0x100C)
 #endif
 
 /**************************************************************************\

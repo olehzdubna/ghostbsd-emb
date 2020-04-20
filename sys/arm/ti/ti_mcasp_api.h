@@ -40,8 +40,8 @@
 *
 */
 
-#ifndef __MCASP_H__
-#define __MCASP_H__
+#ifndef __MCASP_API_H__
+#define __MCASP_API_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -453,13 +453,20 @@ i** Macros which can be passed as rxMode to mcasp_RxFmtI2SSet API.
 #define MCASP_CONTEXT_RX                       (0x02)
 #define MCASP_CONTEXT_BOTH                     (0x03)
 
+#define TI_MCASP_NUM_MEMS 2
+#define TI_MCASP_NUM_IRQS 2
+
 struct ti_mcasp_softc {
-    device_t		dev;
-    struct resource *	mem_res;
-    struct resource *	irq_res;
-    void *		intr_cookie;
-    clk_ident_t		mcasp_clk_id;
-    uint32_t		baseclk_hz;
+    device_t dev;
+    struct resource*  mem_res[TI_MCASP_NUM_MEMS];
+    struct resource*  irq_res[TI_MCASP_NUM_IRQS];
+    void* intr_cookie[TI_MCASP_NUM_IRQS];
+    clk_ident_t mcasp_clk_id;
+    struct mtx sc_mtx;
+    struct mtx sc_mtx_rx;
+    struct mtx sc_mtx_tx;
+    uint32_t rx_chan;
+    uint32_t tx_chan;
 };
 
 /*****************************************************************************/
@@ -575,12 +582,16 @@ uint32_t mcasp_dit_chan_usr_data_read(struct ti_mcasp_softc *sc,
 uint32_t mcasp_rx_buf_read(struct ti_mcasp_softc *sc, uint32_t serNum);
 uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc);
 uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc);
+uint32_t mcasp_global_status_get(struct ti_mcasp_softc *sc);
 void mcasp_tx_status_set(struct ti_mcasp_softc *sc, uint32_t status);
 void mcasp_rx_status_set(struct ti_mcasp_softc *sc, uint32_t status);
 void mcasp_context_save(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
                              mcasp_context_t *contextPtr, uint32_t sectFlag);
 void mcasp_context_restore(struct ti_mcasp_softc *scCtrl, struct ti_mcasp_softc *scFifo,
                                 mcasp_context_t *contextPtr, uint32_t sectFlag);
+
+void mcasp_dout_set(struct ti_mcasp_softc *sc, uint32_t data);
+uint32_t mcasp_din_get(struct ti_mcasp_softc *sc);
 
 uint32_t
 ti_mcasp_read_4(struct ti_mcasp_softc *sc, bus_size_t off);
@@ -593,4 +604,4 @@ mcasp_chdev_ioctl_calls(struct ti_mcasp_softc *sc, u_long cmd, caddr_t data, int
 #ifdef __cplusplus
 }
 #endif
-#endif /* __MCASP_H__ */
+#endif /* __MCASP_API_H__ */

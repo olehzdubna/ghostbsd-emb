@@ -50,14 +50,14 @@
 uint32_t
 ti_mcasp_read_4(struct ti_mcasp_softc *sc, bus_size_t off)
 {
-    return (bus_read_4(sc->mem_res, off));
+    return (bus_read_4(sc->mem_res[0], off));
 }
 
 void
 ti_mcasp_write_4(struct ti_mcasp_softc *sc, bus_size_t off, uint32_t val)
 {
 
-    bus_write_4(sc->mem_res, off, val);
+    bus_write_4(sc->mem_res[0], off, val);
 }
 
 /*******************************************************************************
@@ -112,6 +112,8 @@ void mcasp_write_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numTxSer,
     /* The configuration is done. now set the enable bit */
     uint32_t val = ti_mcasp_read_4(sc, MCASP_FIFO_WFIFOCTL);
     ti_mcasp_write_4(sc, MCASP_FIFO_WFIFOCTL, val | AFIFO_WFIFOCTL_WENA);
+
+    printf("+++ mcasp_write_fifo_enable %8.8x\n", ti_mcasp_read_4(sc, MCASP_FIFO_WFIFOCTL));
 }
 
 /**
@@ -137,6 +139,8 @@ void mcasp_read_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numRxSer,
     /* The configuration is done. now set the enable bit */
     uint32_t val = ti_mcasp_read_4(sc, MCASP_FIFO_RFIFOCTL);
     ti_mcasp_write_4(sc, MCASP_FIFO_RFIFOCTL, val | AFIFO_RFIFOCTL_RENA);
+
+    printf("+++ mcasp_write_fifo_enable %8.8x\n", ti_mcasp_read_4(sc, MCASP_FIFO_RFIFOCTL));
 }
 
 /**
@@ -154,6 +158,8 @@ void mcasp_read_fifo_enable(struct ti_mcasp_softc *sc, uint32_t numRxSer,
 void mcasp_tx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask)
 {
     ti_mcasp_write_4(sc, MCASP_XMASK, mask);
+
+    printf("+++ mcasp_tx_fmt_mask_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_XMASK));
 }
 
 /**
@@ -171,6 +177,8 @@ void mcasp_tx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask)
 void mcasp_rx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask)
 {
     ti_mcasp_write_4(sc, MCASP_RMASK, mask);
+
+    printf("+++ mcasp_rx_fmt_mask_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_RMASK));
 }
 
 /**
@@ -230,6 +238,8 @@ void mcasp_rx_fmt_mask_set(struct ti_mcasp_softc *sc, uint32_t mask)
 void mcasp_tx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal)
 {
     ti_mcasp_write_4(sc, MCASP_XFMT, formatVal);
+
+    printf("+++ mcasp_tx_fmt_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_XFMT));
 } 
 
 /**
@@ -289,6 +299,8 @@ void mcasp_tx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal)
 void mcasp_rx_fmt_set(struct ti_mcasp_softc *sc, uint32_t formatVal)
 {
     ti_mcasp_write_4(sc, MCASP_RFMT, formatVal);
+
+    printf("+++ mcasp_rx_fmt_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_RFMT));
 } 
 
 /**
@@ -312,11 +324,13 @@ void mcasp_tx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
                       uint32_t slotSize, uint32_t txMode)
 {  
     /* Set the mask assuming integer format */
-	mcasp_tx_fmt_mask_set(sc, (1 << wordSize) - 1);
+	uint32_t mask = (wordSize==32)?0xffffffff:(1<<wordSize)-1;
+	mcasp_tx_fmt_mask_set(sc, mask);
 
     /* Set the transmit format unit for I2S */
+	uint32_t rotate = (wordSize==32)?0:(wordSize >> 2);
 	mcasp_tx_fmt_set(sc, (MCASP_TX_PAD_WITH_0 | MCASP_TX_BITSTREAM_MSB_FIRST
-                             | MCASP_TX_SYNC_DELAY_1BIT | (wordSize >> 2)
+                             | MCASP_TX_SYNC_DELAY_1BIT | rotate
                              | ((slotSize/2 -1) << MCASP_XFMT_XSSZ_SHIFT)
                              | txMode));
 }
@@ -342,11 +356,13 @@ void mcasp_rx_fmt_i2s_set(struct ti_mcasp_softc *sc, uint32_t wordSize,
                       uint32_t slotSize, uint32_t rxMode)
 {  
     /* Set the mask assuming integer format */
-	mcasp_rx_fmt_mask_set(sc, (1 << wordSize) - 1);
+	uint32_t mask = (wordSize==32)?0xffffffff:(1<<wordSize)-1;
+	mcasp_rx_fmt_mask_set(sc,  mask);
 
     /* Set the receive format unit for I2S */
+	uint32_t rotate = (wordSize==32)?0:(wordSize >> 2);
 	mcasp_rx_fmt_set(sc, (MCASP_RX_PAD_WITH_0 | MCASP_RX_BITSTREAM_MSB_FIRST
-                             | MCASP_RX_SYNC_DELAY_1BIT | (wordSize >> 2)
+                             | MCASP_RX_SYNC_DELAY_1BIT | rotate
                              | ((slotSize/2 -1) << MCASP_RFMT_RSSZ_SHIFT)
                              | rxMode));
 }
@@ -382,6 +398,8 @@ void mcasp_tx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
 {
     ti_mcasp_write_4(sc, MCASP_AFSXCTL, ((fsMode << MCASP_AFSXCTL_XMOD_SHIFT) 
                                        | fsWidth | fsSetting) );
+
+    printf("+++ mcasp_tx_frame_sync_cfg %8.8x\n", ti_mcasp_read_4(sc, MCASP_AFSXCTL));
 }
 
 /**
@@ -415,6 +433,8 @@ void mcasp_rx_frame_sync_cfg(struct ti_mcasp_softc *sc, uint32_t fsMode,
 {
     ti_mcasp_write_4(sc, MCASP_AFSRCTL, ((fsMode << MCASP_AFSRCTL_RMOD_SHIFT) 
                                        | fsWidth | fsSetting) );
+
+    printf("+++ mcasp_rx_frame_sync_cfg %8.8x\n", ti_mcasp_read_4(sc, MCASP_AFSRCTL));
 }
 
 /**
@@ -637,7 +657,9 @@ void mcasp_serializer_tx_set(struct ti_mcasp_softc *sc, uint32_t serNum)
     uint32_t val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val & ~MCASP_SRCTL0_SRMOD);
     val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
-    ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | 0xC | MCASP_SRCTL_SRMOD_TX);
+    ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | MCASP_SRCTL_SRMOD_TX);
+
+    printf("+++ mcasp_serializer_tx_set #%d, %8.8x\n", serNum, ti_mcasp_read_4(sc, MCASP_SRCTL(serNum)));
 }
 
 /**
@@ -655,6 +677,8 @@ void mcasp_serializer_rx_set(struct ti_mcasp_softc *sc, uint32_t serNum)
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val & ~MCASP_SRCTL0_SRMOD);
     val = ti_mcasp_read_4(sc, MCASP_SRCTL(serNum));
     ti_mcasp_write_4(sc, MCASP_SRCTL(serNum), val | MCASP_SRCTL_SRMOD_RX);
+
+    printf("+++ mcasp_serializer_rx_set #%d, %8.8x\n", serNum, ti_mcasp_read_4(sc, MCASP_SRCTL(serNum)));
 }
 
 
@@ -733,6 +757,18 @@ void mcasp_pin_mcasp_set(struct ti_mcasp_softc *sc, uint32_t pinMask)
 {
     uint32_t val = ti_mcasp_read_4(sc, MCASP_PFUNC);
     ti_mcasp_write_4(sc, MCASP_PFUNC, val & ~pinMask);
+
+    printf("+++ mcasp_pin_mcasp_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_PFUNC));
+}
+
+void mcasp_dout_set(struct ti_mcasp_softc *sc, uint32_t data)
+{
+    ti_mcasp_write_4(sc, MCASP_PDOUT, data);
+}
+
+uint32_t mcasp_din_get(struct ti_mcasp_softc *sc)
+{
+    return ti_mcasp_read_4(sc, MCASP_PDIN);
 }
 
 /**
@@ -757,6 +793,8 @@ void mcasp_pin_dir_output_set(struct ti_mcasp_softc *sc, uint32_t pinMask)
 {
     uint32_t val = ti_mcasp_read_4(sc, MCASP_PDIR);
     ti_mcasp_write_4(sc, MCASP_PDIR, val | pinMask);
+
+    printf("+++ mcasp_pin_dir_output_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_PDIR));
 }
 
 /**
@@ -781,6 +819,8 @@ void mcasp_pin_dir_input_set(struct ti_mcasp_softc *sc, uint32_t pinMask)
 {
     uint32_t val = ti_mcasp_read_4(sc, MCASP_PDIR);
     ti_mcasp_write_4(sc, MCASP_PDIR, val & ~pinMask);
+
+    printf("+++ mcasp_pin_dir_input_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_PDIR));
 }
 
 /**
@@ -797,6 +837,8 @@ void mcasp_pin_dir_input_set(struct ti_mcasp_softc *sc, uint32_t pinMask)
 void mcasp_tx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask)
 {
      ti_mcasp_write_4(sc, MCASP_XTDM, slotMask);
+
+     printf("+++ mcasp_tx_time_slot_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_XTDM));
 }
 
 /**
@@ -813,6 +855,8 @@ void mcasp_tx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask)
 void mcasp_rx_time_slot_set(struct ti_mcasp_softc *sc, uint32_t slotMask)
 {
      ti_mcasp_write_4(sc, MCASP_RTDM, slotMask);
+
+     printf("+++ mcasp_rx_time_slot_set %8.8x\n", ti_mcasp_read_4(sc, MCASP_RTDM));
 }
 
 
@@ -1048,13 +1092,15 @@ int mcasp_tx_ser_activate(struct ti_mcasp_softc *sc)
     int i=0;
     int tries = 1000000;
 
-    ti_mcasp_write_4(sc, MCASP_XSTAT, 0xFFFF);
+    ti_mcasp_write_4(sc, MCASP_XSTAT, 0x1FF);
 
     /* Release transmit serializers from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_XSRCLR);
     for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_XSRCLR) 
           != MCASP_GBLCTL_XSRCLR) && i>0; --i);
+
+    printf("+++ mcasp_tx_ser_activate %8.8x\n", ti_mcasp_read_4(sc, MCASP_GBLCTL));
 
    return i;
 }
@@ -1072,13 +1118,15 @@ int mcasp_rx_ser_activate(struct ti_mcasp_softc *sc)
     int i=0;
     int tries = 1000000;
 
-    ti_mcasp_write_4(sc, MCASP_RSTAT, 0xFFFF);
+    ti_mcasp_write_4(sc, MCASP_RSTAT, 0x1FF);
 
     /* Release transmit serializers from reset*/
     uint32_t val = ti_mcasp_read_4(sc, MCASP_GBLCTL);
     ti_mcasp_write_4(sc, MCASP_GBLCTL, val | MCASP_GBLCTL_RSRCLR);
     for(i=tries;((ti_mcasp_read_4(sc, MCASP_GBLCTL) & MCASP_GBLCTL_RSRCLR)
           != MCASP_GBLCTL_RSRCLR) && i>0; --i);
+
+    printf("+++ mcasp_rx_ser_activate %8.8x\n", ti_mcasp_read_4(sc, MCASP_GBLCTL));
 
     return i;
 }
@@ -1506,6 +1554,11 @@ uint32_t mcasp_tx_status_get(struct ti_mcasp_softc *sc)
 uint32_t mcasp_rx_status_get(struct ti_mcasp_softc *sc)
 {
     return ti_mcasp_read_4(sc, MCASP_RSTAT);
+}
+
+uint32_t mcasp_global_status_get(struct ti_mcasp_softc *sc)
+{
+    return ti_mcasp_read_4(sc, MCASP_GBLCTL);
 }
 
 /**

@@ -194,7 +194,7 @@
 		};
 
 		edma: edma@49000000 {
-			compatible = "ti,edma3-tpcc";
+			compatible = "ti,edma3";
 			ti,hwmods = "tpcc";
 			reg =	<0x49000000 0x10000>;
 			reg-names = "edma3_cc";
