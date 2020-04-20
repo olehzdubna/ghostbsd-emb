@@ -280,9 +280,10 @@ WANT_LINKER_TYPE=
     !make(test-system-compiler)
 .if ${WANT_LINKER_TYPE} == "lld"
 WANT_LINKER_FREEBSD_VERSION_FILE= lib/clang/include/VCSVersion.inc
-WANT_LINKER_FREEBSD_VERSION!= \
+_WANT_LINKER_FREEBSD_VERSION!= \
 	awk '$$2 == "LLD_REVISION" {gsub(/"/, "", $$3); print $$3}' \
 	${SRCDIR}/${WANT_LINKER_FREEBSD_VERSION_FILE} || echo unknown
+WANT_LINKER_FREEBSD_VERSION=${_WANT_LINKER_FREEBSD_VERSION:C/.*-(.*)/\1/}
 WANT_LINKER_VERSION_FILE= lib/clang/include/lld/Common/Version.inc
 WANT_LINKER_VERSION!= \
 	awk '$$2 == "LLD_VERSION" {split($$3, a, "."); print a[1] * 10000 + a[2] * 100 + a[3]}' \
@@ -2473,6 +2474,7 @@ NXBMAKE+=	XCC="${NXBOBJTOP}/tmp/usr/bin/cc" \
 		XCPP="${NXBOBJTOP}/tmp/usr/bin/cpp"
 .endif
 NXBMAKE+=	${NXBMAKEENV} ${MAKE} -f Makefile.inc1 ${NXBMAKEARGS} \
+		MACHINE=${MACHINE} MACHINE_ARCH=${MACHINE_ARCH} \
 		TARGET=${NXB_TARGET} TARGET_ARCH=${NXB_TARGET_ARCH} \
 		TARGET_TRIPLE=${MACHINE_TRIPLE:Q}
 # NXBDIRS is improperly based on MACHINE rather than NXB_TARGET.  Need to

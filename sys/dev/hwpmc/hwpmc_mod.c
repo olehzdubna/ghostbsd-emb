@@ -2426,12 +2426,13 @@ pmc_thread_descriptor_pool_free_task(void *arg __unused)
 	int delta;
 
 	LIST_INIT(&tmplist);
+
 	/* Determine what changes, if any, we need to make. */
 	mtx_lock_spin(&pmc_threadfreelist_mtx);
 	delta = pmc_threadfreelist_entries - pmc_threadfreelist_max;
-	while (delta > 0 &&
-		   (pt = LIST_FIRST(&pmc_threadfreelist)) != NULL) {
+	while (delta > 0 && (pt = LIST_FIRST(&pmc_threadfreelist)) != NULL) {
 		delta--;
+		pmc_threadfreelist_entries--;
 		LIST_REMOVE(pt, pt_next);
 		LIST_INSERT_HEAD(&tmplist, pt, pt_next);
 	}
@@ -4828,7 +4829,7 @@ pmc_capture_user_callchain(int cpu, int ring, struct trapframe *tf)
 			nfree++;
 #endif
 		if (ps->ps_td != td ||
-		   ps->ps_nsamples == PMC_USER_CALLCHAIN_PENDING ||
+		   ps->ps_nsamples != PMC_USER_CALLCHAIN_PENDING ||
 		   ps->ps_pmc->pm_state != PMC_STATE_RUNNING)
 			continue;
 

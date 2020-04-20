@@ -28,6 +28,7 @@
  * Copyright (c) 2015, STRATO AG, Inc. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2017 Nexenta Systems, Inc.
+ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
  */
 
 /* Portions Copyright 2010 Robert Milkowski */
@@ -951,6 +952,8 @@ dmu_objset_create_check(void *arg, dmu_tx_t *tx)
 	dmu_objset_create_arg_t *doca = arg;
 	dsl_pool_t *dp = dmu_tx_pool(tx);
 	dsl_dir_t *pdd;
+	dsl_dataset_t *parentds;
+	objset_t *parentos;
 	const char *tail;
 	int error;
 
@@ -972,6 +975,30 @@ dmu_objset_create_check(void *arg, dmu_tx_t *tx)
 	}
 	error = dsl_fs_ss_limit_check(pdd, 1, ZFS_PROP_FILESYSTEM_LIMIT, NULL,
 	    doca->doca_cred);
+	if (error != 0) {
+		dsl_dir_rele(pdd, FTAG);
+		return (error);
+	}
+
+	/* can't create below anything but filesystems (eg. no ZVOLs) */
+	error = dsl_dataset_hold_obj(pdd->dd_pool,
+	    dsl_dir_phys(pdd)->dd_head_dataset_obj, FTAG, &parentds);
+	if (error != 0) {
+		dsl_dir_rele(pdd, FTAG);
+		return (error);
+	}
+	error = dmu_objset_from_ds(parentds, &parentos);
+	if (error != 0) {
+		dsl_dataset_rele(parentds, FTAG);
+		dsl_dir_rele(pdd, FTAG);
+		return (error);
+	}
+	if (dmu_objset_type(parentos) != DMU_OST_ZFS) {
+		dsl_dataset_rele(parentds, FTAG);
+		dsl_dir_rele(pdd, FTAG);
+		return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
+	}
+	dsl_dataset_rele(parentds, FTAG);
 	dsl_dir_rele(pdd, FTAG);
 
 	return (error);
@@ -1353,6 +1380,8 @@ dmu_objset_sync(objset_t *os, zio_t *pio, dmu_tx_t *tx)
 	zio_t *zio;
 	list_t *list;
 	dbuf_dirty_record_t *dr;
+	int num_sublists;
+	multilist_t *ml;
 	blkptr_t *blkptr_copy = kmem_alloc(sizeof (*os->os_rootbp), KM_SLEEP);
 	*blkptr_copy = *os->os_rootbp;
 
@@ -1421,10 +1450,13 @@ dmu_objset_sync(objset_t *os, zio_t *pio, dmu_tx_t *tx)
 		}
 	}
 
-	for (int i = 0;
-	    i < multilist_get_num_sublists(os->os_dirty_dnodes[txgoff]); i++) {
+	ml = os->os_dirty_dnodes[txgoff];
+	num_sublists = multilist_get_num_sublists(ml);
+	for (int i = 0; i < num_sublists; i++) {
+		if (multilist_sublist_is_empty_idx(ml, i))
+			continue;
 		sync_dnodes_arg_t *sda = kmem_alloc(sizeof (*sda), KM_SLEEP);
-		sda->sda_list = os->os_dirty_dnodes[txgoff];
+		sda->sda_list = ml;
 		sda->sda_sublist_idx = i;
 		sda->sda_tx = tx;
 		(void) taskq_dispatch(dmu_objset_pool(os)->dp_sync_taskq,
@@ -1640,6 +1672,8 @@ userquota_updates_task(void *arg)
 void
 dmu_objset_do_userquota_updates(objset_t *os, dmu_tx_t *tx)
 {
+	int num_sublists;
+
 	if (!dmu_objset_userused_enabled(os))
 		return;
 
@@ -1653,8 +1687,10 @@ dmu_objset_do_userquota_updates(objset_t *os, dmu_tx_t *tx)
 		    DMU_OT_USERGROUP_USED, DMU_OT_NONE, 0, tx));
 	}
 
-	for (int i = 0;
-	    i < multilist_get_num_sublists(os->os_synced_dnodes); i++) {
+	num_sublists = multilist_get_num_sublists(os->os_synced_dnodes);
+	for (int i = 0; i < num_sublists; i++) {
+		if (multilist_sublist_is_empty_idx(os->os_synced_dnodes, i))
+			continue;
 		userquota_updates_arg_t *uua =
 		    kmem_alloc(sizeof (*uua), KM_SLEEP);
 		uua->uua_os = os;
